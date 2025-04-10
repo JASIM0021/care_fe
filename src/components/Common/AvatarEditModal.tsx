@@ -23,6 +23,8 @@ import {
 
 import useDragAndDrop from "@/hooks/useDragAndDrop";
 
+import { useMediaDevicePermission } from "@/Utils/useMediaDevicePermission";
+
 interface Props {
   title: string;
   open: boolean;
@@ -77,6 +79,7 @@ const AvatarEditModal = ({
   );
   const { t } = useTranslation();
   const [isDragging, setIsDragging] = useState(false);
+  const { requestPermission } = useMediaDevicePermission();
 
   const handleSwitchCamera = useCallback(() => {
     setConstraint(
@@ -222,7 +225,7 @@ const AvatarEditModal = ({
 
   return (
     <Dialog open={open} onOpenChange={closeModal}>
-      <DialogContent className="md:max-w-4xl">
+      <DialogContent className="md:max-w-4xl max-h-screen overflow-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">{title}</DialogTitle>
           <DialogDescription className="sr-only">
@@ -268,7 +271,7 @@ const AvatarEditModal = ({
                       fill="none"
                       viewBox="0 0 48 48"
                       aria-hidden="true"
-                      className={`h-12 w-12 stroke-[2px] ${
+                      className={`size-12 stroke-[2px] ${
                         isDragging
                           ? "text-green-500"
                           : dragProps.dragOver
@@ -391,9 +394,11 @@ const AvatarEditModal = ({
                         width={1280}
                         ref={webRef}
                         videoConstraints={constraint}
-                        onUserMediaError={(_e) => {
-                          setIsCameraOpen(false);
-                          toast.warning(t("camera_permission_denied"));
+                        onUserMediaError={async () => {
+                          const requestValue = await requestPermission("user");
+                          if (!requestValue.hasPermission) {
+                            setIsCameraOpen(false);
+                          }
                         }}
                       />
                     </>

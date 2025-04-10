@@ -59,7 +59,7 @@ export default function CreateScheduleExceptionSheet({
 
   // Voluntarily masking the setQParams function to merge with other query params if any (since path is not unique within the user availability tab)
   const [qParams, _setQParams] = useQueryParams<QueryParams>();
-  const setQParams = (p: QueryParams) => _setQParams(p, { replace: false });
+  const setQParams = (p: QueryParams) => _setQParams(p, { overwrite: false });
 
   const formSchema = z
     .object({
@@ -191,7 +191,7 @@ export default function CreateScheduleExceptionSheet({
         </SheetHeader>
 
         <div className="-mx-6 mb-16 overflow-auto px-6 pb-16 pt-6">
-          <div className="rounded-md bg-white p-4 shadow">
+          <div className="rounded-md bg-white p-4 shadow-sm">
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}

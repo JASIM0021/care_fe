@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import * as z from "zod";
 
+import CareIcon from "@/CAREUI/icons/CareIcon";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -31,15 +33,18 @@ import useAppHistory from "@/hooks/useAppHistory";
 import mutate from "@/Utils/request/mutate";
 import {
   TERMINOLOGY_SYSTEMS,
+  UpdateValuesetModel,
   ValuesetFormType,
   ValuesetLookupResponse,
 } from "@/types/valueset/valueset";
 import valuesetApi from "@/types/valueset/valuesetApi";
 
+import { ValueSetPreview } from "./ValueSetPreview";
+
 // Create a schema for form validation
 
 interface ValueSetFormProps {
-  initialData?: ValuesetFormType;
+  initialData?: UpdateValuesetModel;
   onSubmit: (data: ValuesetFormType) => void;
   isSubmitting?: boolean;
 }
@@ -111,7 +116,7 @@ function ConceptFields({
           size="sm"
           onClick={() => append({ code: "", display: "" })}
         >
-          <PlusIcon className="h-4 w-4 mr-2" />
+          <PlusIcon className="size-4 mr-2" />
           Add Concept
         </Button>
       </div>
@@ -163,7 +168,7 @@ function ConceptFields({
             onClick={() => handleVerify(index)}
             disabled={lookupMutation.isPending}
           >
-            <UpdateIcon className="h-4 w-4" />
+            <UpdateIcon className="size-4" />
           </Button>
           <Button
             type="button"
@@ -171,7 +176,7 @@ function ConceptFields({
             size="icon"
             onClick={() => remove(index)}
           >
-            <TrashIcon className="h-4 w-4" />
+            <TrashIcon className="size-4" />
           </Button>
         </div>
       ))}
@@ -202,7 +207,7 @@ function FilterFields({
           size="sm"
           onClick={() => append({ property: "", op: "", value: "" })}
         >
-          <PlusIcon className="h-4 w-4 mr-2" />
+          <PlusIcon className="size-4 mr-2" />
           Add Filter
         </Button>
       </div>
@@ -247,7 +252,7 @@ function FilterFields({
             size="icon"
             onClick={() => remove(index)}
           >
-            <TrashIcon className="h-4 w-4" />
+            <TrashIcon className="size-4" />
           </Button>
         </div>
       ))}
@@ -285,7 +290,7 @@ function RuleFields({
             })
           }
         >
-          <PlusIcon className="h-4 w-4 mr-2" />
+          <PlusIcon className="size-4 mr-2" />
           Add Rule
         </Button>
       </CardHeader>
@@ -328,7 +333,7 @@ function RuleFields({
                 size="icon"
                 onClick={() => remove(index)}
               >
-                <TrashIcon className="h-4 w-4" />
+                <TrashIcon className="size-4" />
               </Button>
             </div>
             <ConceptFields nestIndex={index} type={type} parentForm={form} />
@@ -351,8 +356,8 @@ export function ValueSetForm({
     slug: z
       .string()
       .trim()
-      .min(5, t("field_required"))
-      .max(25, t("max_character_validation", { length: 25 }))
+      .min(5, t("character_count_validation", { min: 5, max: 25 }))
+      .max(25, t("character_count_validation", { min: 5, max: 25 }))
       .regex(/^[-\w]+$/, {
         message: t("slug_format_message"),
       }),
@@ -426,6 +431,19 @@ export function ValueSetForm({
 
   return (
     <Form {...form}>
+      <div className="flex justify-end">
+        {!initialData?.id && (
+          <ValueSetPreview
+            valueset={form.getValues()}
+            trigger={
+              <Button variant="outline_primary">
+                <CareIcon icon={"l-eye"} className="h-4 w-4" />
+                {t("valueset_preview")}
+              </Button>
+            }
+          />
+        )}
+      </div>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}

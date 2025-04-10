@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { t } from "i18next";
 import { Link } from "raviger";
 import { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
 
@@ -29,6 +29,8 @@ export function DiagnosisList({
   className = "",
   readOnly = false,
 }: DiagnosisListProps) {
+  const { t } = useTranslation();
+
   const { data: diagnoses, isLoading: isDiagnosesLoading } = useQuery({
     queryKey: ["encounter_diagnosis", patientId, encounterId],
     queryFn: query(diagnosisApi.listDiagnosis, {
@@ -105,6 +107,8 @@ const DiagnosisListLayout = ({
   className?: string;
   readOnly?: boolean;
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Card className={cn("rounded-sm ", className)}>
       <CardHeader
@@ -116,7 +120,7 @@ const DiagnosisListLayout = ({
             href={`questionnaire/diagnosis`}
             className="flex items-center gap-1 text-sm hover:text-gray-500 text-gray-950"
           >
-            <CareIcon icon="l-pen" className="w-4 h-4" />
+            <CareIcon icon="l-pen" className="size-4" />
             {t("edit")}
           </Link>
         )}

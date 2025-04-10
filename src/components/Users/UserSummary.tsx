@@ -19,6 +19,7 @@ import UserSoftwareUpdate from "@/components/Users/UserSoftwareUpdate";
 import {
   BasicInfoDetails,
   ContactInfoDetails,
+  GeoOrgDetails,
 } from "@/components/Users/UserViewDetails";
 
 import useAuthUser from "@/hooks/useAuthUser";
@@ -43,7 +44,11 @@ export default function UserSummaryTab({
     onSuccess: () => {
       toast.success(t("user_deleted_successfully"));
       setShowDeleteDialog(false);
-      navigate("/users");
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        navigate("/");
+      }
     },
     onError: () => {
       setShowDeleteDialog(false);
@@ -69,7 +74,7 @@ export default function UserSummaryTab({
 
   const renderBasicInformation = () => {
     return (
-      <div className="overflow-visible px-4 py-5 sm:px-6 rounded-lg shadow sm:rounded-lg bg-white">
+      <div className="overflow-visible px-4 py-5 sm:px-6 rounded-lg shadow-sm sm:rounded-lg bg-white">
         <BasicInfoDetails user={userData} />
       </div>
     );
@@ -77,8 +82,16 @@ export default function UserSummaryTab({
 
   const renderContactInformation = () => {
     return (
-      <div className="overflow-visible px-4 py-5 sm:px-6 rounded-lg shadow sm:rounded-lg bg-white">
+      <div className="overflow-visible px-4 py-5 sm:px-6 rounded-lg shadow-sm sm:rounded-lg bg-white">
         <ContactInfoDetails user={userData} />
+      </div>
+    );
+  };
+
+  const renderGeoOrgDetails = () => {
+    return (
+      <div className="overflow-visible px-4 py-5 sm:px-6 rounded-lg shadow-sm sm:rounded-lg bg-white">
+        <GeoOrgDetails user={userData} />
       </div>
     );
   };
@@ -109,7 +122,7 @@ export default function UserSummaryTab({
             data-cy="edit-user-button"
             onClick={() => setShowEditUserSheet(true)}
           >
-            <CareIcon icon="l-pen" className="mr-2 h-4 w-4" />
+            <CareIcon icon="l-pen" className="mr-2 size-4" />
             {t("edit_user")}
           </Button>
         )}
@@ -149,6 +162,20 @@ export default function UserSummaryTab({
           Child={renderContactInformation}
           childProps={userColumnsData}
         />
+        {"geo_organization" in userData && (
+          <UserColumns
+            heading={t("location_info")}
+            note={
+              authUser.username === userData.username
+                ? t("location_info_note_self")
+                : canEditUser
+                  ? t("location_info_note")
+                  : t("location_info_note_view")
+            }
+            Child={renderGeoOrgDetails}
+            childProps={userColumnsData}
+          />
+        )}
         {canResetPassword && (
           <UserColumns
             heading={t("reset_password")}

@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import CareIcon from "@/CAREUI/icons/CareIcon";
 
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Command,
   CommandEmpty,
@@ -59,6 +60,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import Loading from "@/components/Common/Loading";
 import Page from "@/components/Common/Page";
+import { TableSkeleton } from "@/components/Common/SkeletonLoading";
 
 import useAppHistory from "@/hooks/useAppHistory";
 import useAuthUser from "@/hooks/useAuthUser";
@@ -93,6 +95,21 @@ import scheduleApis from "@/types/scheduling/scheduleApi";
 interface DateRangeDisplayProps {
   dateFrom: string | null;
   dateTo: string | null;
+}
+
+function AppointmentsEmptyState() {
+  const { t } = useTranslation();
+  return (
+    <Card className="flex flex-col items-center justify-center p-8 text-center border-dashed">
+      <div className="rounded-full bg-primary/10 p-3 mb-4">
+        <CareIcon icon="l-calendar-slash" className="size-6 text-primary" />
+      </div>
+      <h3 className="text-lg font-semibold mb-1">{t("no_appointments")}</h3>
+      <p className="text-sm text-gray-500 mb-4">
+        {t("adjust_appointments_filters")}
+      </p>
+    </Card>
+  );
 }
 
 function DateRangeDisplay({ dateFrom, dateTo }: DateRangeDisplayProps) {
@@ -237,21 +254,23 @@ function DateRangeDisplay({ dateFrom, dateTo }: DateRangeDisplayProps) {
   );
 }
 
-export default function AppointmentsPage(props: { facilityId?: string }) {
+export default function AppointmentsPage({
+  facilityId,
+}: {
+  facilityId: string;
+}) {
   const { t } = useTranslation();
   const authUser = useAuthUser();
   const { qParams, updateQuery, resultsPerPage, Pagination } = useFilters({
     limit: 15,
   });
 
-  const facilityId = props.facilityId ?? authUser.home_facility!;
-
   const [activeTab, setActiveTab] = useView("appointments", "board");
 
   const { hasPermission } = usePermissions();
   const { goBack } = useAppHistory();
 
-  const { data: facilityData } = useQuery({
+  const { data: facilityData, isLoading: isFacilityLoading } = useQuery({
     queryKey: ["facility", facilityId],
     queryFn: query(routes.getPermittedFacility, {
       pathParams: { id: facilityId },
@@ -342,11 +361,12 @@ export default function AppointmentsPage(props: { facilityId?: string }) {
   const slot = slots?.find((s) => s.id === qParams.slot);
 
   useEffect(() => {
-    if (!canViewAppointments) {
+    if (!canViewAppointments && !isFacilityLoading) {
       toast.error(t("no_permission_to_view_page"));
       goBack("/");
     }
-  }, [canViewAppointments]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canViewAppointments, isFacilityLoading]);
 
   if (schedulableUsersQuery.isLoading) {
     return <Loading />;
@@ -374,8 +394,8 @@ export default function AppointmentsPage(props: { facilityId?: string }) {
       }
     >
       <div className="mt-4 py-4 flex flex-col lg:flex-row gap-4 justify-between border-t border-gray-200">
-        <div className="flex flex-col xl:flex-row gap-4 items-start md:items-start">
-          <div className="mt-1">
+        <div className="flex flex-col xl:flex-row gap-4 items-start md:items-start md:w-xs">
+          <div className="mt-1 w-full">
             <Label className="mb-2 text-black">
               {t("select_practitioner")}
             </Label>
@@ -527,7 +547,7 @@ export default function AppointmentsPage(props: { facilityId?: string }) {
 
         <div className="flex gap-4 items-center">
           <Input
-            className="w-[300px]"
+            className="md:w-xs w-full"
             placeholder={t("search")}
             value={qParams.search ?? ""}
             onChange={(e) => updateQuery({ search: e.target.value })}
@@ -685,7 +705,7 @@ function AppointmentCard({ appointment }: { appointment: Appointment }) {
   const { t } = useTranslation();
 
   return (
-    <div className="bg-white p-3 rounded shadow group hover:ring-1 hover:ring-primary-700 hover:ring-offset-1 hover:ring-offset-white hover:shadow-md transition-all duration-100 ease-in-out">
+    <div className="bg-white p-3 rounded shadow-sm group hover:ring-1 hover:ring-primary-700 hover:ring-offset-1 hover:ring-offset-white hover:shadow-md transition-all duration-100 ease-in-out">
       <div className="flex justify-between items-start mb-2">
         <div>
           <h3 className="font-semibold text-base group-hover:text-primary-700 transition-all duration-200 ease-in-out">
@@ -737,7 +757,7 @@ function AppointmentRow(props: {
 }) {
   const { t } = useTranslation();
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: [
       "appointments",
       props.facilityId,
@@ -771,29 +791,61 @@ function AppointmentRow(props: {
     );
   }
   return (
-    <>
+    <div className="overflow-x-auto">
       <div className={cn(!data && "animate-pulse")}>
-        <Tabs
-          value={props.status ?? "booked"}
-          className="w-full overflow-scroll"
-          onValueChange={(value) => props.updateQuery({ status: value })}
-        >
-          <TabsList>
-            <TabsTrigger value="booked">{t("booked")}</TabsTrigger>
-            <TabsTrigger value="checked_in">{t("checked_in")}</TabsTrigger>
-            <TabsTrigger value="in_consultation">
-              {t("in_consultation")}
-            </TabsTrigger>
-            <TabsTrigger value="fulfilled">{t("fulfilled")}</TabsTrigger>
-            <TabsTrigger value="noshow">{t("noshow")}</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        {appointments.length === 0 ? (
-          <div className="flex mt-2 bg-white justify-center items-center h-[calc(100vh-22rem)]">
-            <p className="text-gray-500">{t("no_appointments")}</p>
-          </div>
+        <div className="hidden md:flex">
+          <Tabs
+            value={props.status ?? "booked"}
+            className="overflow-x-auto"
+            onValueChange={(value) => props.updateQuery({ status: value })}
+          >
+            <TabsList>
+              <TabsTrigger value="booked">{t("booked")}</TabsTrigger>
+              <TabsTrigger value="checked_in">{t("checked_in")}</TabsTrigger>
+              <TabsTrigger value="in_consultation">
+                {t("in_consultation")}
+              </TabsTrigger>
+              <TabsTrigger value="fulfilled">{t("fulfilled")}</TabsTrigger>
+              <TabsTrigger value="noshow">{t("noshow")}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {/* Status Filter - Mobile */}
+        <div className="md:hidden">
+          <Select
+            value={props.status || "booked"}
+            onValueChange={(value) => props.updateQuery({ status: value })}
+          >
+            <SelectTrigger className="h-8 w-[160px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="booked">
+                <div className="flex items-center">Booked</div>
+              </SelectItem>
+              <SelectItem value="checked_in">
+                <div className="flex items-center">Checked In</div>
+              </SelectItem>
+              <SelectItem value="in_consultation">
+                <div className="flex items-center">In Consultation</div>
+              </SelectItem>
+              <SelectItem value="fulfilled">
+                <div className="flex items-center">Fulfilled</div>
+              </SelectItem>
+              <SelectItem value="noshow">
+                <div className="flex items-center">No Show</div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {isLoading ? (
+          <TableSkeleton count={5} />
+        ) : appointments.length === 0 ? (
+          <AppointmentsEmptyState />
         ) : (
-          <Table className="p-2 border-separate border-spacing-y-3 min-w-[900px]">
+          <Table className="p-2 border-separate border-gray-200 border-spacing-y-3">
             <TableHeader>
               <TableRow>
                 <TableHead className="pl-8 font-semibold text-black text-xs">
@@ -814,7 +866,7 @@ function AppointmentRow(props: {
               {appointments.map((appointment) => (
                 <TableRow
                   key={appointment.id}
-                  className="shadow rounded-lg cursor-pointer group"
+                  className="shadow-sm rounded-lg cursor-pointer group"
                   onClick={() =>
                     navigate(
                       `/facility/${props.facilityId}/patient/${appointment.patient.id}/appointments/${appointment.id}`,
@@ -832,7 +884,7 @@ function AppointmentRow(props: {
         )}
         {props.Pagination({ totalCount: data?.count ?? 0 })}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -1032,7 +1084,7 @@ export const SlotFilter = ({
         <Command>
           <CommandInput
             placeholder={t("search")}
-            className="outline-none border-none ring-0 shadow-none"
+            className="outline-hidden border-none ring-0 shadow-none"
           />
           <CommandList>
             <CommandEmpty>{t("no_slots_found")}</CommandEmpty>

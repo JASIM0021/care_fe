@@ -123,21 +123,23 @@ export const MultiSelect = React.forwardRef<
                       return (
                         <Badge
                           key={value}
-                          className="m-1 border-foreground/10 bg-secondary text-black hover:bg-secondary/80"
+                          className="m-1 cursor-pointer"
+                          variant="secondary"
                         >
                           {option?.icon && (
                             <CareIcon
                               icon={option.icon}
-                              className="h-4 w-4 mr-2"
+                              className="size-4 mr-2"
                             />
                           )}
                           {option?.label}
                           <XCircle
-                            className="ml-2 h-4 w-4 cursor-pointer"
+                            className="ml-2 size-4 cursor-pointer opacity-50 hover:opacity-100 hover:text-black"
                             onClick={(event) => {
                               event.stopPropagation();
                               toggleOption(value);
                             }}
+                            aria-label={`Remove ${option?.label}`}
                           />
                         </Badge>
                       );
@@ -190,6 +192,7 @@ export const MultiSelect = React.forwardRef<
                   >
                     <Checkbox
                       checked={selectedValues.length === options.length}
+                      aria-label="Select all options"
                     />
                     <span>{t("select_all")}</span>
                   </CommandItem>
@@ -201,11 +204,14 @@ export const MultiSelect = React.forwardRef<
                         onSelect={() => toggleOption(option.value)}
                         className="cursor-pointer"
                       >
-                        <Checkbox checked={isSelected} />
+                        <Checkbox
+                          checked={isSelected}
+                          aria-label={`Select ${option.label}`}
+                        />
                         {option?.icon && (
                           <CareIcon
                             icon={option.icon}
-                            className="mr-2 h-4 w-4"
+                            className="mr-2 size-4"
                           />
                         )}
                         <span>{option.label}</span>
